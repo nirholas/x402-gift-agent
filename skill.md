@@ -45,7 +45,7 @@ Response `201`:
   "status": "unclaimed",
   "signature": "7b21…hex hmac…",
   "algorithm": "HMAC-SHA256",
-  "payment": {
+  "settlement": {
     "rail": "evm",
     "network": "base-sepolia",
     "transaction": "0xabc…",

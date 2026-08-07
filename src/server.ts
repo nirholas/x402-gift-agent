@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { solanaCheckout } from "./checkout.js";
-import { paymentOf, paywall, payToBanner } from "./payments.js";
+import { paywall, payToBanner, withSettlement } from "./payments.js";
 import {
   claimVoucher,
   createVoucher,
@@ -99,7 +99,7 @@ app.post("/verify", (req, res) => {
 app.post("/gifts", (req, res) => {
   const amount = resolveGiftAmount(req.query.amount ?? req.body?.amount);
   const voucher = createVoucher(amount, req.body ?? {});
-  res.status(201).json({ ...voucher, payment: paymentOf(req) ?? null });
+  res.status(201).json(withSettlement(voucher, req));
 });
 
 // ---- Static (demo page + /.well-known/x402) ---------------------------------
