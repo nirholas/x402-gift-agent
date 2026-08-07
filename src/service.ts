@@ -12,7 +12,7 @@
  * specific recipient wallet on either rail, and only that wallet can claim it.
  */
 import { randomBytes, randomUUID } from "node:crypto";
-import { signArtifact, type Signed } from "./sign.js";
+import { resignInPlace, signArtifact, type Signed } from "./sign.js";
 import { loadStore, saveStore } from "./store.js";
 import { parseWallet, requireWallet, sameWallet, walletRef, type Rail } from "./wallet.js";
 
@@ -142,6 +142,7 @@ export function claimVoucher(
     throw new GiftError(409, "ALREADY_CLAIMED", `Voucher ${voucher.voucherId} was already claimed`);
   if (new Date(voucher.expiresAt).getTime() < Date.now()) {
     voucher.status = "expired";
+    resignInPlace(voucher); // stored voucher changed — re-sign it
     persist();
     throw new GiftError(410, "VOUCHER_EXPIRED", `Voucher expired at ${voucher.expiresAt}`);
   }
@@ -154,6 +155,7 @@ export function claimVoucher(
   }
 
   voucher.status = "claimed";
+  resignInPlace(voucher); // status moved — re-sign so the record still verifies
   const credit: CreditRecord = {
     creditId: `cred_${randomUUID()}`,
     document: "x402-gift-agent/credit",
@@ -181,6 +183,7 @@ export function voucherStatus(id: string): Record<string, unknown> | undefined {
   if (!v) return undefined;
   if (v.status === "unclaimed" && new Date(v.expiresAt).getTime() < Date.now()) {
     v.status = "expired";
+    resignInPlace(v);
     persist();
   }
   const { claimCode: _hidden, ...publicVoucher } = v;
