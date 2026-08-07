@@ -198,6 +198,11 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "Gift budget in USD. Only honoured when no ?amount= query parameter was sent on the paid request.",
+                    "example": "0.25"
+                  },
                   "sponsor": {
                     "type": "string"
                   },
@@ -234,7 +239,19 @@
               "x402": {}
             }
           ]
-        }
+        },
+        "parameters": [
+          {
+            "name": "amount",
+            "in": "query",
+            "required": false,
+            "description": "Gift budget in USD, clamped to $0.01–$5.00 (default $0.10). Send it in the query string: the 402 challenge is built before the request body is read, so this is what lets the quote be amount + $0.01 fee.",
+            "schema": {
+              "type": "string",
+              "example": "0.25"
+            }
+          }
+        ]
       }
     },
     "/claim/{code}": {
@@ -411,9 +428,6 @@
                 }
               }
             }
-          },
-          "402": {
-            "description": "Payment Required"
           }
         },
         "requestBody": {
@@ -437,18 +451,7 @@
             }
           }
         },
-        "x-payment-info": {
-          "price": {
-            "mode": "fixed",
-            "currency": "USD",
-            "amount": "0.000000"
-          },
-          "protocols": [
-            {
-              "x402": {}
-            }
-          ]
-        }
+        "security": []
       }
     },
     "/gifts/{id}": {
@@ -512,23 +515,9 @@
                 }
               }
             }
-          },
-          "402": {
-            "description": "Payment Required"
           }
         },
-        "x-payment-info": {
-          "price": {
-            "mode": "fixed",
-            "currency": "USD",
-            "amount": "0.000000"
-          },
-          "protocols": [
-            {
-              "x402": {}
-            }
-          ]
-        }
+        "security": []
       }
     },
     "/credits/{wallet}": {
@@ -601,23 +590,9 @@
                 }
               }
             }
-          },
-          "402": {
-            "description": "Payment Required"
           }
         },
-        "x-payment-info": {
-          "price": {
-            "mode": "fixed",
-            "currency": "USD",
-            "amount": "0.000000"
-          },
-          "protocols": [
-            {
-              "x402": {}
-            }
-          ]
-        }
+        "security": []
       }
     },
     "/stats": {
@@ -661,23 +636,9 @@
                 }
               }
             }
-          },
-          "402": {
-            "description": "Payment Required"
           }
         },
-        "x-payment-info": {
-          "price": {
-            "mode": "fixed",
-            "currency": "USD",
-            "amount": "0.000000"
-          },
-          "protocols": [
-            {
-              "x402": {}
-            }
-          ]
-        }
+        "security": []
       }
     },
     "/verify": {
@@ -706,9 +667,6 @@
                 }
               }
             }
-          },
-          "402": {
-            "description": "Payment Required"
           }
         },
         "requestBody": {
@@ -736,18 +694,7 @@
             }
           }
         },
-        "x-payment-info": {
-          "price": {
-            "mode": "fixed",
-            "currency": "USD",
-            "amount": "0.000000"
-          },
-          "protocols": [
-            {
-              "x402": {}
-            }
-          ]
-        }
+        "security": []
       }
     },
     "/health": {
@@ -780,23 +727,9 @@
                 }
               }
             }
-          },
-          "402": {
-            "description": "Payment Required"
           }
         },
-        "x-payment-info": {
-          "price": {
-            "mode": "fixed",
-            "currency": "USD",
-            "amount": "0.000000"
-          },
-          "protocols": [
-            {
-              "x402": {}
-            }
-          ]
-        }
+        "security": []
       }
     }
   },

@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { solanaCheckout } from "./checkout.js";
 import { paywall, payToBanner, withSettlement } from "./payments.js";
+import { ROUTE_SCHEMAS } from "./schemas.js";
 import {
   claimVoucher,
   createVoucher,
@@ -38,7 +39,7 @@ app.use(
       return {
         price: money(amount + FEE),
         description: `Gift voucher: ${money(amount)} task budget + ${money(FEE)} fee`,
-        outputSchema: { type: "object", description: "Signed gift voucher including its claim code" },
+        outputSchema: ROUTE_SCHEMAS["POST /gifts"],
       };
     },
   }),
