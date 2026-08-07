@@ -1,0 +1,289 @@
+{
+  "x402Version": 1,
+  "name": "x402-gift-agent",
+  "description": "Fund someone else's agent task — buy a signed gift voucher, recipient's agent redeems it for execution with receipts",
+  "homepage": "https://nirholas.github.io/x402-gift-agent/",
+  "skill": "skill.md",
+  "networks": [
+    "base-sepolia",
+    "base",
+    "solana-devnet",
+    "solana"
+  ],
+  "payTo": {
+    "evm": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+    "solana": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+  },
+  "facilitator": "https://x402.org/facilitator",
+  "resources": [
+    {
+      "resource": "POST /gifts",
+      "description": "Buy a gift voucher: pay (gift amount + $0.01 fee) and receive a signed voucher with claim code, task budget and expiry in the response body.",
+      "price": "$0.11",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [
+        {
+          "scheme": "exact",
+          "network": "base-sepolia",
+          "asset": "USDC",
+          "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+          "price": "$0.11"
+        },
+        {
+          "scheme": "exact",
+          "network": "solana-devnet",
+          "asset": "USDC",
+          "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+          "price": "$0.11"
+        }
+      ],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "voucherId": {
+            "type": "string"
+          },
+          "document": {
+            "const": "x402-gift-agent/voucher"
+          },
+          "claimCode": {
+            "type": "string",
+            "description": "Secret redemption code — returned only to the buyer"
+          },
+          "taskBudget": {
+            "type": "string"
+          },
+          "feePaid": {
+            "type": "string"
+          },
+          "totalPaid": {
+            "type": "string"
+          },
+          "sponsor": {
+            "type": "object",
+            "description": "Dual-rail wallet identity",
+            "properties": {
+              "rail": {
+                "type": "string",
+                "enum": [
+                  "evm",
+                  "solana"
+                ]
+              },
+              "address": {
+                "type": "string",
+                "description": "Lowercased 0x address, or base58 Solana pubkey"
+              }
+            }
+          },
+          "boundTo": {
+            "type": "object",
+            "description": "Dual-rail wallet identity",
+            "properties": {
+              "rail": {
+                "type": "string",
+                "enum": [
+                  "evm",
+                  "solana"
+                ]
+              },
+              "address": {
+                "type": "string",
+                "description": "Lowercased 0x address, or base58 Solana pubkey"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "taskHint": {
+            "type": "string"
+          },
+          "issuedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unclaimed",
+              "claimed",
+              "expired"
+            ]
+          },
+          "signature": {
+            "type": "string"
+          },
+          "algorithm": {
+            "const": "HMAC-SHA256"
+          }
+        }
+      }
+    },
+    {
+      "resource": "POST /claim/:code",
+      "description": "Redeem a claim code against a wallet. Free — the sponsor already paid. Returns voucher validation plus a signed spendable credit record.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "voucher": {
+            "type": "object",
+            "description": "The voucher, with claimCode redacted"
+          },
+          "credit": {
+            "type": "object",
+            "properties": {
+              "creditId": {
+                "type": "string"
+              },
+              "document": {
+                "const": "x402-gift-agent/credit"
+              },
+              "voucherId": {
+                "type": "string"
+              },
+              "budget": {
+                "type": "string"
+              },
+              "claimedBy": {
+                "type": "object",
+                "description": "Dual-rail wallet identity",
+                "properties": {
+                  "rail": {
+                    "type": "string",
+                    "enum": [
+                      "evm",
+                      "solana"
+                    ]
+                  },
+                  "address": {
+                    "type": "string",
+                    "description": "Lowercased 0x address, or base58 Solana pubkey"
+                  }
+                }
+              },
+              "claimedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "status": {
+                "const": "active"
+              },
+              "redemption": {
+                "type": "string"
+              },
+              "signature": {
+                "type": "string"
+              },
+              "algorithm": {
+                "const": "HMAC-SHA256"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "resource": "GET /gifts/:id",
+      "description": "Public voucher status. Never exposes the claim code.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object"
+      }
+    },
+    {
+      "resource": "GET /credits/:wallet",
+      "description": "Every signed credit record held by one wallet, on whichever rail it lives.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "wallet": {
+            "type": "string"
+          },
+          "credits": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    {
+      "resource": "GET /stats",
+      "description": "Vouchers issued, vouchers claimed, total gifted, and claims split by rail.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "issued": {
+            "type": "integer"
+          },
+          "claimed": {
+            "type": "integer"
+          },
+          "totalGifted": {
+            "type": "string"
+          },
+          "byRail": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "resource": "POST /verify",
+      "description": "Verify the HMAC-SHA256 signature of any voucher or credit issued by this service.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    {
+      "resource": "GET /health",
+      "description": "Liveness probe.",
+      "price": "$0",
+      "network": "base-sepolia",
+      "asset": "USDC",
+      "accepts": [],
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "service": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]
+}

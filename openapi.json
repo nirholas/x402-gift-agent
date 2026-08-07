@@ -1,0 +1,848 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "x402-gift-agent",
+    "version": "0.1.0",
+    "description": "Fund someone else's agent task — buy a signed gift voucher, recipient's agent redeems it for execution with receipts\n\nPaid routes are settled with x402 (HTTP 402) in USDC on **Base or Solana** — the client picks the rail from the 402 `accepts` array.",
+    "license": {
+      "name": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "contact": {
+      "name": "nirholas",
+      "email": "nichxbt@gmail.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4022",
+      "description": "Local development"
+    },
+    {
+      "url": "https://{host}",
+      "description": "Self-hosted",
+      "variables": {
+        "host": {
+          "default": "example.com"
+        }
+      }
+    }
+  ],
+  "tags": [
+    {
+      "name": "paid",
+      "description": "x402-paid routes — the artifact is returned in the 200 body"
+    },
+    {
+      "name": "free",
+      "description": "Free routes"
+    }
+  ],
+  "paths": {
+    "/gifts": {
+      "post": {
+        "summary": "Buy a gift voucher. Costs the gift amount plus a $0.01 fee; returns the signed voucher including its secret claim code.",
+        "description": "Buy a gift voucher. Costs the gift amount plus a $0.01 fee; returns the signed voucher including its secret claim code. Paid: $0.11 (gift amount + $0.01 fee — e.g. `?amount=0.10`) in USDC on Base or Solana (x402).",
+        "operationId": "buyGift",
+        "tags": [
+          "paid"
+        ],
+        "responses": {
+          "201": {
+            "description": "Signed gift voucher (claim code, task budget, expiry)",
+            "headers": {
+              "X-PAYMENT-RESPONSE": {
+                "description": "Base64 settlement receipt: { rail, network, transaction, payer }",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "voucherId": {
+                      "type": "string"
+                    },
+                    "document": {
+                      "const": "x402-gift-agent/voucher"
+                    },
+                    "claimCode": {
+                      "type": "string",
+                      "description": "Secret redemption code — returned only to the buyer"
+                    },
+                    "taskBudget": {
+                      "type": "string"
+                    },
+                    "feePaid": {
+                      "type": "string"
+                    },
+                    "totalPaid": {
+                      "type": "string"
+                    },
+                    "sponsor": {
+                      "type": "object",
+                      "description": "Dual-rail wallet identity",
+                      "properties": {
+                        "rail": {
+                          "type": "string",
+                          "enum": [
+                            "evm",
+                            "solana"
+                          ]
+                        },
+                        "address": {
+                          "type": "string",
+                          "description": "Lowercased 0x address, or base58 Solana pubkey"
+                        }
+                      }
+                    },
+                    "boundTo": {
+                      "type": "object",
+                      "description": "Dual-rail wallet identity",
+                      "properties": {
+                        "rail": {
+                          "type": "string",
+                          "enum": [
+                            "evm",
+                            "solana"
+                          ]
+                        },
+                        "address": {
+                          "type": "string",
+                          "description": "Lowercased 0x address, or base58 Solana pubkey"
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "taskHint": {
+                      "type": "string"
+                    },
+                    "issuedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "unclaimed",
+                        "claimed",
+                        "expired"
+                      ]
+                    },
+                    "signature": {
+                      "type": "string"
+                    },
+                    "algorithm": {
+                      "const": "HMAC-SHA256"
+                    }
+                  }
+                },
+                "example": {
+                  "voucherId": "gift_1c9d7f22-0b3e-4c5a-9f11-77a2d0e4bb31",
+                  "document": "x402-gift-agent/voucher",
+                  "claimCode": "GIFT-4A7C-19F0-B3D2",
+                  "taskBudget": "$0.50",
+                  "feePaid": "$0.01",
+                  "totalPaid": "$0.51",
+                  "sponsor": {
+                    "rail": "evm",
+                    "address": "0x40252cfdf8b20ed757d61ff157719f33ec332402"
+                  },
+                  "boundTo": {
+                    "rail": "solana",
+                    "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                  },
+                  "message": "Happy birthday — have your agent book us dinner!",
+                  "taskHint": "restaurant booking, 2 people, Friday",
+                  "issuedAt": "2026-01-01T00:00:00.000Z",
+                  "expiresAt": "2026-01-31T00:00:00.000Z",
+                  "status": "unclaimed",
+                  "signature": "7b21…hex hmac…",
+                  "algorithm": "HMAC-SHA256",
+                  "payment": {
+                    "rail": "evm",
+                    "network": "base-sepolia",
+                    "transaction": "0xabc…",
+                    "payer": "0xPayer…",
+                    "amount": "510000"
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Payment required — dual-rail x402 challenge listing a Base (EVM) and a Solana entry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentRequired"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sponsor": {
+                    "type": "string"
+                  },
+                  "recipient": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "taskHint": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              },
+              "example": {
+                "sponsor": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+                "recipient": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+                "message": "Happy birthday — have your agent book us dinner!",
+                "taskHint": "restaurant booking, 2 people, Friday"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/claim/{code}": {
+      "post": {
+        "summary": "Redeem a claim code against a wallet. Free — the sponsor already paid. Returns voucher validation plus a signed spendable credit record.",
+        "description": "Redeem a claim code against a wallet. Free — the sponsor already paid. Returns voucher validation plus a signed spendable credit record. Free.",
+        "operationId": "claimVoucher",
+        "tags": [
+          "free"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The `claimCode` from the voucher, e.g. `GIFT-4A7C-19F0-B3D2`"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Voucher validation + signed spendable credit record",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "voucher": {
+                      "type": "object",
+                      "description": "The voucher, with claimCode redacted"
+                    },
+                    "credit": {
+                      "type": "object",
+                      "properties": {
+                        "creditId": {
+                          "type": "string"
+                        },
+                        "document": {
+                          "const": "x402-gift-agent/credit"
+                        },
+                        "voucherId": {
+                          "type": "string"
+                        },
+                        "budget": {
+                          "type": "string"
+                        },
+                        "claimedBy": {
+                          "type": "object",
+                          "description": "Dual-rail wallet identity",
+                          "properties": {
+                            "rail": {
+                              "type": "string",
+                              "enum": [
+                                "evm",
+                                "solana"
+                              ]
+                            },
+                            "address": {
+                              "type": "string",
+                              "description": "Lowercased 0x address, or base58 Solana pubkey"
+                            }
+                          }
+                        },
+                        "claimedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "status": {
+                          "const": "active"
+                        },
+                        "redemption": {
+                          "type": "string"
+                        },
+                        "signature": {
+                          "type": "string"
+                        },
+                        "algorithm": {
+                          "const": "HMAC-SHA256"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "voucher": {
+                    "voucherId": "gift_1c9d7f22-0b3e-4c5a-9f11-77a2d0e4bb31",
+                    "document": "x402-gift-agent/voucher",
+                    "taskBudget": "$0.50",
+                    "feePaid": "$0.01",
+                    "totalPaid": "$0.51",
+                    "sponsor": {
+                      "rail": "evm",
+                      "address": "0x40252cfdf8b20ed757d61ff157719f33ec332402"
+                    },
+                    "boundTo": {
+                      "rail": "solana",
+                      "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                    },
+                    "message": "Happy birthday — have your agent book us dinner!",
+                    "taskHint": "restaurant booking, 2 people, Friday",
+                    "issuedAt": "2026-01-01T00:00:00.000Z",
+                    "expiresAt": "2026-01-31T00:00:00.000Z",
+                    "status": "claimed",
+                    "signature": "7b21…hex hmac…",
+                    "algorithm": "HMAC-SHA256"
+                  },
+                  "credit": {
+                    "creditId": "cred_ab77e310-4c21-4f0d-9a3b-2e5c6d7f8091",
+                    "document": "x402-gift-agent/credit",
+                    "voucherId": "gift_1c9d7f22-0b3e-4c5a-9f11-77a2d0e4bb31",
+                    "budget": "$0.50",
+                    "claimedBy": {
+                      "rail": "solana",
+                      "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                    },
+                    "claimedAt": "2026-01-02T00:00:00.000Z",
+                    "status": "active",
+                    "redemption": "Present this signed credit to the sponsor's chosen executor, or spend the budget via any x402 client funded for the task. The credit proves the gift was claimed by solana wallet WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW.",
+                    "signature": "e4f0…hex hmac…",
+                    "algorithm": "HMAC-SHA256"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not an EVM address or Solana pubkey",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Voucher is bound to a different wallet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown claim code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Voucher was already redeemed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Voucher past its expiry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "wallet"
+                ],
+                "properties": {
+                  "wallet": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "wallet": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gifts/{id}": {
+      "get": {
+        "summary": "Public voucher status. Never exposes the claim code.",
+        "description": "Public voucher status. Never exposes the claim code. Free.",
+        "operationId": "voucherStatus",
+        "tags": [
+          "free"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The voucherId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Voucher status snapshot (claim code redacted)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "voucherId": "gift_1c9d7f22-0b3e-4c5a-9f11-77a2d0e4bb31",
+                  "document": "x402-gift-agent/voucher",
+                  "taskBudget": "$0.50",
+                  "feePaid": "$0.01",
+                  "totalPaid": "$0.51",
+                  "sponsor": {
+                    "rail": "evm",
+                    "address": "0x40252cfdf8b20ed757d61ff157719f33ec332402"
+                  },
+                  "boundTo": {
+                    "rail": "solana",
+                    "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                  },
+                  "message": "Happy birthday — have your agent book us dinner!",
+                  "taskHint": "restaurant booking, 2 people, Friday",
+                  "issuedAt": "2026-01-01T00:00:00.000Z",
+                  "expiresAt": "2026-01-31T00:00:00.000Z",
+                  "status": "unclaimed",
+                  "signature": "7b21…hex hmac…",
+                  "algorithm": "HMAC-SHA256"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown voucherId",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/credits/{wallet}": {
+      "get": {
+        "summary": "Every signed credit record held by one wallet, on whichever rail it lives.",
+        "description": "Every signed credit record held by one wallet, on whichever rail it lives. Free.",
+        "operationId": "creditsForWallet",
+        "tags": [
+          "free"
+        ],
+        "parameters": [
+          {
+            "name": "wallet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "EVM address or Solana pubkey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed credit records owned by that wallet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "wallet": {
+                      "type": "string"
+                    },
+                    "credits": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "wallet": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+                  "credits": [
+                    {
+                      "creditId": "cred_ab77e310-4c21-4f0d-9a3b-2e5c6d7f8091",
+                      "document": "x402-gift-agent/credit",
+                      "voucherId": "gift_1c9d7f22-0b3e-4c5a-9f11-77a2d0e4bb31",
+                      "budget": "$0.50",
+                      "claimedBy": {
+                        "rail": "solana",
+                        "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                      },
+                      "claimedAt": "2026-01-02T00:00:00.000Z",
+                      "status": "active",
+                      "redemption": "Present this signed credit to the sponsor's chosen executor, or spend the budget via any x402 client funded for the task. The credit proves the gift was claimed by solana wallet WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW.",
+                      "signature": "e4f0…hex hmac…",
+                      "algorithm": "HMAC-SHA256"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not an EVM address or Solana pubkey",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Vouchers issued, vouchers claimed, total gifted, and claims split by rail.",
+        "description": "Vouchers issued, vouchers claimed, total gifted, and claims split by rail. Free.",
+        "operationId": "stats",
+        "tags": [
+          "free"
+        ],
+        "responses": {
+          "200": {
+            "description": "Aggregate counters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "issued": {
+                      "type": "integer"
+                    },
+                    "claimed": {
+                      "type": "integer"
+                    },
+                    "totalGifted": {
+                      "type": "string"
+                    },
+                    "byRail": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "example": {
+                  "issued": 12,
+                  "claimed": 7,
+                  "totalGifted": "$4.10",
+                  "byRail": {
+                    "evm": 5,
+                    "solana": 2
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/verify": {
+      "post": {
+        "summary": "Verify the HMAC-SHA256 signature of any voucher or credit issued by this service.",
+        "description": "Verify the HMAC-SHA256 signature of any voucher or credit issued by this service. Free.",
+        "operationId": "verifyArtifact",
+        "tags": [
+          "free"
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ valid: true | false }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "valid": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "example": {
+                  "valid": true
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "creditId": "cred_ab77e310-4c21-4f0d-9a3b-2e5c6d7f8091",
+                "document": "x402-gift-agent/credit",
+                "voucherId": "gift_1c9d7f22-0b3e-4c5a-9f11-77a2d0e4bb31",
+                "budget": "$0.50",
+                "claimedBy": {
+                  "rail": "solana",
+                  "address": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW"
+                },
+                "claimedAt": "2026-01-02T00:00:00.000Z",
+                "status": "active",
+                "redemption": "Present this signed credit to the sponsor's chosen executor, or spend the budget via any x402 client funded for the task. The credit proves the gift was claimed by solana wallet WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW.",
+                "signature": "e4f0…hex hmac…",
+                "algorithm": "HMAC-SHA256"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Liveness probe.",
+        "description": "Liveness probe. Free.",
+        "operationId": "health",
+        "tags": [
+          "free"
+        ],
+        "responses": {
+          "200": {
+            "description": "`{ ok: true }`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    },
+                    "service": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "ok": true,
+                  "service": "x402-gift-agent"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PaymentRequired": {
+        "type": "object",
+        "description": "x402 challenge. `accepts` always contains both an EVM and a Solana entry.",
+        "required": [
+          "x402Version",
+          "accepts"
+        ],
+        "properties": {
+          "x402Version": {
+            "type": "integer",
+            "const": 1
+          },
+          "error": {
+            "type": "string"
+          },
+          "accepts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaymentRequirements"
+            }
+          }
+        },
+        "example": {
+          "x402Version": 1,
+          "error": "X-PAYMENT header is required",
+          "accepts": [
+            {
+              "scheme": "exact",
+              "network": "base-sepolia",
+              "maxAmountRequired": "10000",
+              "resource": "http://localhost:4022/gifts",
+              "description": "Buy a gift voucher. Costs the gift amount plus a $0.01 fee; returns the signed voucher including its secret claim code.",
+              "mimeType": "application/json",
+              "payTo": "0x40252CFDF8B20Ed757D61ff157719F33Ec332402",
+              "maxTimeoutSeconds": 120,
+              "asset": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+              "extra": {
+                "name": "USDC",
+                "version": "2"
+              }
+            },
+            {
+              "scheme": "exact",
+              "network": "solana-devnet",
+              "maxAmountRequired": "10000",
+              "resource": "http://localhost:4022/gifts",
+              "description": "Buy a gift voucher. Costs the gift amount plus a $0.01 fee; returns the signed voucher including its secret claim code.",
+              "mimeType": "application/json",
+              "payTo": "WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW",
+              "maxTimeoutSeconds": 120,
+              "asset": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+              "extra": {
+                "feePayer": "CKPKJWNdJEqa81x7CkZ14BVPiY6y16Sxs7owznqtWYp5"
+              }
+            }
+          ]
+        }
+      },
+      "PaymentRequirements": {
+        "type": "object",
+        "required": [
+          "scheme",
+          "network",
+          "maxAmountRequired",
+          "resource",
+          "description",
+          "mimeType",
+          "payTo",
+          "maxTimeoutSeconds",
+          "asset"
+        ],
+        "properties": {
+          "scheme": {
+            "type": "string",
+            "const": "exact"
+          },
+          "network": {
+            "type": "string",
+            "enum": [
+              "base-sepolia",
+              "base",
+              "solana-devnet",
+              "solana"
+            ]
+          },
+          "maxAmountRequired": {
+            "type": "string",
+            "description": "Amount in USDC base units (6 decimals)"
+          },
+          "resource": {
+            "type": "string",
+            "format": "uri"
+          },
+          "description": {
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "payTo": {
+            "type": "string",
+            "description": "EVM 0x address or Solana base58 pubkey depending on the rail"
+          },
+          "maxTimeoutSeconds": {
+            "type": "integer"
+          },
+          "asset": {
+            "type": "string",
+            "description": "USDC contract address or SPL mint"
+          },
+          "outputSchema": {
+            "type": "object"
+          },
+          "extra": {
+            "type": "object",
+            "description": "EIP-712 domain on the EVM rail; `{ feePayer }` sponsor account on the Solana rail"
+          }
+        }
+      },
+      "Signature": {
+        "type": "object",
+        "description": "Every artifact carries an HMAC-SHA256 signature over its canonical JSON.",
+        "properties": {
+          "signature": {
+            "type": "string",
+            "description": "hex HMAC-SHA256"
+          },
+          "algorithm": {
+            "type": "string",
+            "const": "HMAC-SHA256"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

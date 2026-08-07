@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>x402-gift-agent — gift an agent task</title>
+<meta name="description" content="Pay once in USDC on Base or Solana and get a signed gift voucher back in the same response.">
+<script type="module" src="https://unpkg.com/@three-ws/x402-payment-modal"
+        data-x402-checkout-path="/api/x402-checkout"
+        data-x402-brand-name="x402-gift-agent"
+        data-x402-brand-url="https://github.com/nirholas/x402-gift-agent"
+        data-x402-footer-note="USDC on Base or Solana — secured by x402"></script>
+<style>
+:root{--accent:#0052ff;--bg:#fff;--fg:#111418;--muted:#5b6470;--card:#f5f7fa;--border:#e3e7ee;--ok:#0a7d33;--warn:#b3541e}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0f14;--fg:#e8ecf2;--muted:#98a2b3;--card:#151a22;--border:#232b37;--ok:#3fce74;--warn:#e08a4e}}
+*{box-sizing:border-box;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;padding:0 20px}
+.wrap{max-width:720px;margin:0 auto;padding:48px 0}
+h1{font-size:1.9rem;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+h2{font-size:1.1rem;letter-spacing:-.01em}
+.tag{color:var(--muted);margin:8px 0 14px}
+.rails{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:26px}
+.rail{flex:1 1 220px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:.82rem}
+.rail b{display:block;color:var(--accent);font-size:.72rem;letter-spacing:.05em;margin-bottom:2px}
+.rail code{font-size:.72rem;word-break:break-all;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:20px}
+label{display:block;font-size:.85rem;font-weight:600;margin:12px 0 4px}
+input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
+.hint{font-size:.78rem;color:var(--muted);margin-top:4px}
+.hint.bad{color:var(--warn)}
+.tiers{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button.tier{flex:1 1 140px;padding:12px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-weight:700;font-size:.95rem;cursor:pointer}
+button.tier small{display:block;font-weight:400;opacity:.85}
+button.ghost{background:transparent;color:var(--accent)}
+#result{display:none}
+#result.show{display:block}
+.voucher{border:2px dashed var(--accent);border-radius:12px;padding:18px;margin-top:10px}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.3rem;font-weight:700;color:var(--accent);letter-spacing:.06em}
+.kv{font-size:.9rem;margin-top:8px}
+.kv b{display:inline-block;min-width:110px;color:var(--muted);font-weight:600}
+.kv span{word-break:break-all}
+.ok{color:var(--ok);font-weight:600}
+pre{background:#10151f;color:#d7dfec;padding:14px;border-radius:10px;overflow-x:auto;font-size:.8rem;margin-top:12px}
+a{color:var(--accent)}
+.note{font-size:.85rem;color:var(--muted);margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎁 x402-<span>gift-agent</span></h1>
+  <p class="tag">Fund someone else's agent task. Pay once in USDC — get a signed gift voucher with a secret claim code, instantly, in the payment response.</p>
+
+  <div class="rails">
+    <div class="rail"><b>EVM · BASE</b>USDC on base-sepolia<br><code>0x40252CFDF8B20Ed757D61ff157719F33Ec332402</code></div>
+    <div class="rail"><b>SOLANA</b>USDC on solana-devnet<br><code>WwwuGbqHrwF5RG89KhUbmRWEvjnRH9k5kVM5p7T3WwW</code></div>
+  </div>
+
+  <div class="card">
+    <h2>Buy a voucher</h2>
+    <label for="sponsor">Your wallet (optional)</label>
+    <input id="sponsor" placeholder="0xYourAddress or YourSolanaPubkey">
+    <label for="recipient">Bind to recipient wallet (optional)</label>
+    <input id="recipient" placeholder="0xTheirAddress or TheirSolanaPubkey">
+    <p class="hint" id="recipientHint">Leave blank for a bearer voucher — whoever holds the code can claim it. Either rail works.</p>
+    <label for="message">Gift message (optional)</label>
+    <input id="message" placeholder="Happy birthday — have your agent book us dinner!">
+    <div class="tiers">
+      <button class="tier" data-x402-endpoint="/gifts?amount=0.10" data-x402-method="POST" data-x402-merchant="x402-gift-agent" data-x402-action="Gift $0.10">
+        Gift $0.10 <small>pay $0.11 incl. fee</small>
+      </button>
+      <button class="tier" data-x402-endpoint="/gifts?amount=0.50" data-x402-method="POST" data-x402-merchant="x402-gift-agent" data-x402-action="Gift $0.50">
+        Gift $0.50 <small>pay $0.51 incl. fee</small>
+      </button>
+      <button class="tier" data-x402-endpoint="/gifts?amount=1.00" data-x402-method="POST" data-x402-merchant="x402-gift-agent" data-x402-action="Gift $1.00">
+        Gift $1.00 <small>pay $1.01 incl. fee</small>
+      </button>
+    </div>
+    <p class="note">The 402 carries both rails, so the modal offers an EVM wallet <em>and</em> Phantom. Sign in once with SIWX, approve within your spending caps, done.</p>
+  </div>
+
+  <div class="card" id="result">
+    <h2>Your signed voucher</h2>
+    <div class="voucher">
+      <div class="code" id="claimCode"></div>
+      <div class="kv"><b>Budget</b><span id="budget"></span></div>
+      <div class="kv"><b>Voucher</b><span id="voucherId"></span></div>
+      <div class="kv"><b>Bound to</b><span id="bound"></span></div>
+      <div class="kv"><b>Expires</b><span id="expires"></span></div>
+      <div class="kv"><b>Signature</b><span id="sig" style="font-size:.8rem"></span></div>
+    </div>
+    <p class="note ok" id="settled">Payment settled. Send the claim code to the recipient; their agent redeems it free at <code>POST /claim/:code</code>.</p>
+    <pre id="raw"></pre>
+  </div>
+
+  <div class="card">
+    <h2>Redeem a code (free)</h2>
+    <label for="codeIn">Claim code</label>
+    <input id="codeIn" placeholder="GIFT-XXXX-XXXX-XXXX">
+    <label for="walletIn">Claiming wallet</label>
+    <input id="walletIn" placeholder="0xYourAddress or YourSolanaPubkey">
+    <p class="hint" id="walletHint">EVM address (0x + 40 hex) or Solana pubkey (base58, 32 bytes).</p>
+    <div class="tiers"><button class="tier ghost" id="claimBtn">Redeem → signed credit record</button></div>
+    <pre id="claimOut" style="display:none"></pre>
+  </div>
+
+  <p class="note"><a href="https://github.com/nirholas/x402-gift-agent">GitHub</a> · <a href="https://nirholas.github.io/x402-gift-agent/">Docs</a> · <a href="/.well-known/x402">.well-known/x402</a> · <a href="/skill.md">skill.md</a></p>
+</div>
+<script>
+// Same dual-rail wallet check the server runs, so the form fails fast.
+const BASE58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+function base58Bytes(s) {
+  const out = [];
+  for (const ch of s) {
+    let carry = BASE58.indexOf(ch);
+    if (carry < 0) return -1;
+    for (let i = 0; i < out.length; i++) { carry += out[i] * 58; out[i] = carry & 255; carry >>= 8; }
+    while (carry > 0) { out.push(carry & 255); carry >>= 8; }
+  }
+  let zeros = 0;
+  for (const ch of s) { if (ch !== "1") break; zeros++; }
+  return out.length + zeros;
+}
+function railOf(value) {
+  const v = (value || "").trim();
+  if (!v) return null;
+  if (/^0x[0-9a-fA-F]{40}$/.test(v)) return "evm";
+  if (v.length >= 32 && v.length <= 44 && base58Bytes(v) === 32) return "solana";
+  return "invalid";
+}
+function wireHint(inputId, hintId, base, optional) {
+  const input = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  input.addEventListener("input", () => {
+    const rail = railOf(input.value);
+    if (rail === null) { hint.textContent = base; hint.className = "hint"; return; }
+    if (rail === "invalid") {
+      hint.textContent = "Not a valid EVM address or Solana pubkey.";
+      hint.className = "hint bad";
+      return;
+    }
+    hint.textContent = rail === "evm" ? "Recognised: EVM address (Base rail)." : "Recognised: Solana pubkey (Solana rail).";
+    hint.className = "hint";
+  });
+  if (optional) void 0;
+}
+wireHint("recipient", "recipientHint", "Leave blank for a bearer voucher — whoever holds the code can claim it. Either rail works.", true);
+wireHint("walletIn", "walletHint", "EVM address (0x + 40 hex) or Solana pubkey (base58, 32 bytes).", false);
+
+// Send the form fields along with each paid request.
+for (const btn of document.querySelectorAll("[data-x402-endpoint]")) {
+  const sync = () => btn.setAttribute("data-x402-body", JSON.stringify({
+    sponsor: document.getElementById("sponsor").value.trim() || undefined,
+    recipient: document.getElementById("recipient").value.trim() || undefined,
+    message: document.getElementById("message").value.trim() || undefined,
+  }));
+  sync();
+  btn.addEventListener("pointerdown", sync);
+}
+
+addEventListener("x402:result", (e) => {
+  const detail = e.detail || {};
+  const v = detail.result || detail.body || detail;
+  if (!v || !v.voucherId) return;
+  document.getElementById("result").classList.add("show");
+  document.getElementById("claimCode").textContent = v.claimCode || "";
+  document.getElementById("budget").textContent = v.taskBudget + " (paid " + v.totalPaid + ")";
+  document.getElementById("voucherId").textContent = v.voucherId;
+  document.getElementById("bound").textContent = v.boundTo
+    ? v.boundTo.rail + " · " + v.boundTo.address
+    : "bearer — anyone with the code";
+  document.getElementById("expires").textContent = v.expiresAt;
+  document.getElementById("sig").textContent = v.signature;
+  const pay = detail.payment || v.payment;
+  if (pay) {
+    document.getElementById("settled").textContent =
+      "Settled on " + (pay.network || pay.rail) + " · tx " + (pay.transaction || "").slice(0, 18) +
+      "… — send the claim code to the recipient; their agent redeems it free at POST /claim/:code.";
+  }
+  document.getElementById("raw").textContent = JSON.stringify(v, null, 2);
+});
+
+addEventListener("x402:error", (e) => {
+  const out = document.getElementById("raw");
+  document.getElementById("result").classList.add("show");
+  out.textContent = "Payment failed: " + ((e.detail && e.detail.error) || "unknown error");
+});
+
+document.getElementById("claimBtn").addEventListener("click", async () => {
+  const code = document.getElementById("codeIn").value.trim();
+  const wallet = document.getElementById("walletIn").value.trim();
+  const out = document.getElementById("claimOut");
+  out.style.display = "block";
+  if (!code) { out.textContent = "Enter a claim code."; return; }
+  if (railOf(wallet) !== "evm" && railOf(wallet) !== "solana") {
+    out.textContent = "Enter a valid EVM address or Solana pubkey to claim against.";
+    return;
+  }
+  const res = await fetch("/claim/" + encodeURIComponent(code), {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ wallet })
+  });
+  out.textContent = JSON.stringify(await res.json(), null, 2);
+});
+</script>
+</body>
+</html>
