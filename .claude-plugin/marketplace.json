@@ -1,0 +1,25 @@
+{
+  "name": "x402-gift-agent",
+  "owner": {
+    "name": "nirholas"
+  },
+  "description": "Buy signed gift vouchers that fund another agent's task, and redeem claim codes for spendable credit records.",
+  "plugins": [
+    {
+      "name": "x402-gift-agent",
+      "source": "./plugins/x402-gift-agent",
+      "description": "Buy signed gift vouchers that fund another agent's task, and redeem claim codes for spendable credit records.",
+      "category": "finance",
+      "tags": [
+        "x402",
+        "usdc",
+        "solana",
+        "base",
+        "agentic-commerce",
+        "http-402",
+        "gifts",
+        "vouchers"
+      ]
+    }
+  ]
+}
